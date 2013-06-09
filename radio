@@ -19,7 +19,7 @@ case "$1" in
  stop)
  echo "Stopping radio"
  cat $PIDFILE
- kill -TERM `cat $PIDFILE`
+ sudo kill -15 `cat $PIDFILE`
  ;;
  *)
  echo "Usage: /etc/init.d/radio {start|stop}"

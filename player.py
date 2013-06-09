@@ -4,6 +4,18 @@ import RPi.GPIO as GPIO
 import time
 import sys
 import commands
+import signal
+
+
+stopNow = False
+
+def stop(signum, frame):
+    commands.getstatusoutput("mpc clear")
+    GPIO.cleanup()
+    sys.exit()
+
+
+signal.signal(signal.SIGTERM, stop)
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(16, GPIO.IN)
@@ -62,6 +74,5 @@ try:
         time.sleep(0.1)
 except KeyboardInterrupt:
     print "Stopping"
-    GPIO.cleanup()
-    sys.exit()
+    stop(None,None)
 
