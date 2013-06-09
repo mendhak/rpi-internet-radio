@@ -12,7 +12,7 @@
 case "$1" in
  start)
  echo "Starting radio "
- sudo python /home/mendhak/internetradio/player.py
+ sudo python /home/mendhak/rpi-internet-radio/player.py
  ;;
  stop)
  echo "Stopping radio"
