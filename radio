@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # /etc/init.d/radio
 
 # Create a symlink in init.d 
@@ -7,15 +7,19 @@
 # sudo chmod 777 /home/mendhak/rpi-internet-radio/radio
 # Install the init script
 # sudo update-rc.d radio defaults
- 
+set -e 
+PIDFILE=/var/run/rpi-internet-radio.pid
+
 
 case "$1" in
  start)
  echo "Starting radio "
- sudo python /home/mendhak/rpi-internet-radio/player.py &
+ start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec "/home/mendhak/rpi-internet-radio/player.py"
  ;;
  stop)
  echo "Stopping radio"
+ cat $PIDFILE
+ kill -TERM `cat $PIDFILE`
  ;;
  *)
  echo "Usage: /etc/init.d/radio {start|stop}"
