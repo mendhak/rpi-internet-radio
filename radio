@@ -1,0 +1,26 @@
+#! /bin/sh
+# /etc/init.d/radio
+
+# Create a symlink in init.d 
+# sudo ln -s /home/mendhak/rpi-internet-radio/radio radio
+# Set permissions
+# sudo chmod 777 /home/mendhak/rpi-internet-radio/radio
+# Install the init script
+# sudo update-rc.d radio defaults
+ 
+
+case "$1" in
+ start)
+ echo "Starting radio "
+ sudo python /home/mendhak/internetradio/player.py
+ ;;
+ stop)
+ echo "Stopping radio"
+ ;;
+ *)
+ echo "Usage: /etc/init.d/radio {start|stop}"
+ exit 1
+ ;;
+esac
+ 
+exit 0
