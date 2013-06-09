@@ -7,7 +7,7 @@
 # sudo chmod 777 /home/mendhak/rpi-internet-radio/radio
 # Install the init script
 # sudo update-rc.d radio defaults
-set -e 
+
 PIDFILE=/var/run/rpi-internet-radio.pid
 
 
