@@ -39,16 +39,9 @@ try:
                 commands.getstatusoutput("mpc play")
                 SetLEDStatus(True)
             else:
-                mpc = commands.getstatusoutput("mpc")
-                if ( "playing" in mpc[1] ):
-                    print "Stopping music"
-                    commands.getstatusoutput("mpc stop")
-                    SetLEDStatus(False)
-                else:
-                    print "Starting music"
-                    print commands.getstatusoutput("mpc lsplaylists | shuf -n 1 | mpc load")[1]
-                    commands.getstatusoutput("mpc play")
-                    SetLEDStatus(True)
+                print "Stopping music"
+                commands.getstatusoutput("mpc stop")
+                SetLEDStatus(False)
             prev1 = 0
         if ( GPIO.input(18) == False ):
             mpcvolume = commands.getstatusoutput("mpc volume")
