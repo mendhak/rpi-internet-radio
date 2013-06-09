@@ -27,6 +27,11 @@ def BlinkIndicateOn():
 BlinkIndicateOn()
 
 
+commands.getstatusoutput("mpc clear")
+commands.getstatusoutput("mpc lsplaylists | mpc load")
+
+
+
 try:
     while True:
         if ( GPIO.input(16) == False ):
@@ -34,8 +39,7 @@ try:
         if ( prev1 > 0 and GPIO.input(16) == True ):
             if prev1 < 10:
                 print "Next song"
-                commands.getstatusoutput("mpc clear")
-                print commands.getstatusoutput("mpc lsplaylists | shuf -n 1 | mpc load")[1]
+                commands.getstatusoutput("mpc next")
                 commands.getstatusoutput("mpc play")
                 SetLEDStatus(True)
             else:
