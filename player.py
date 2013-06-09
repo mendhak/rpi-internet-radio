@@ -51,13 +51,13 @@ try:
         if ( GPIO.input(18) == False ):
             mpcvolume = commands.getstatusoutput("mpc volume")
             volume = int(mpcvolume[1].replace("volume:","").replace(" ","").replace("%",""))
-            volume -= 10
+            volume -= 1
             commands.getstatusoutput("mpc volume " + str(volume))
             print "Vol down pressed"
         if ( GPIO.input(22) == False ):
             mpcvolume = commands.getstatusoutput("mpc volume")
             volume = int(mpcvolume[1].replace("volume:","").replace(" ","").replace("%",""))
-            volume += 10
+            volume += 1
             commands.getstatusoutput("mpc volume " + str(volume))
             print "Vol up pressed"
         time.sleep(0.1)
