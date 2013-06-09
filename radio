@@ -9,12 +9,14 @@
 # sudo update-rc.d radio defaults
 
 PIDFILE=/var/run/rpi-internet-radio.pid
+SCRIPT="`readlink -e $0`"
 
+RDIR=$(dirname "$SCRIPT")
 
 case "$1" in
  start)
  echo "Starting radio "
- start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec "/home/mendhak/rpi-internet-radio/player.py"
+ start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE --exec "$RDIR/player.py"
  ;;
  stop)
  echo "Stopping radio"
