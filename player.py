@@ -23,6 +23,12 @@ GPIO.setup(18, GPIO.IN)
 GPIO.setup(22, GPIO.IN)
 GPIO.setup(11, GPIO.OUT)
 prev1 = 0
+radioOff = True
+
+def ReloadPlaylistIfOff():
+    if(radioOff):
+        commands.getstatusoutput("mpc clear")
+        commands.getstatusoutput("mpc lsplaylists | mpc load")
 
 def SetLEDStatus(oNOff):
     GPIO.output(11, oNOff)
@@ -38,9 +44,7 @@ def BlinkIndicateOn():
 
 BlinkIndicateOn()
 
-
-commands.getstatusoutput("mpc clear")
-commands.getstatusoutput("mpc lsplaylists | mpc load")
+ReloadPlaylistIfOff()
 
 
 
@@ -49,6 +53,8 @@ try:
         if ( GPIO.input(16) == False ):
             prev1 += 1
         if ( prev1 > 0 and GPIO.input(16) == True ):
+            ReloadPlaylistIfOff()
+            radioOff = False
             if prev1 < 10:
                 print "Next song"
                 commands.getstatusoutput("mpc next")
@@ -58,6 +64,7 @@ try:
                 print "Stopping music"
                 commands.getstatusoutput("mpc stop")
                 SetLEDStatus(False)
+                radioOff = True
             prev1 = 0
         if ( GPIO.input(18) == False ):
             mpcvolume = commands.getstatusoutput("mpc volume")
