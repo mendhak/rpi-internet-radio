@@ -20,7 +20,7 @@ Wired up on a breadboard with a few common components. This was done with a Rasp
 
 Arrange the components as shown in this professionally drawn schematic
 
-![Google Drawing](https://docs.google.com/drawings/d/1pTASpTHduzxbRdfg-EzTlNQTGg3yXOJpRtLTJLngTbE/pub?w=960&h=720)
+![Google Drawing](https://docs.google.com/file/d/0B6IOK82n4BkAZUxNTVZaR0dlTVE/image?pagenumber=1&w=800)
 
 
 ###Reference Photo
