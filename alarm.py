@@ -32,11 +32,10 @@ class CalendarThread(threading.Thread):
         super(CalendarThread, self).__init__()
 
     def run(self):
-        try:
-            while self.keepRunning:
+        while self.keepRunning:
+            try:
                 if self.lastRunTime and (datetime.datetime.now() - self.lastRunTime).total_seconds() < 300:
-                    print "Skipping loop"
-                    time.sleep(5)
+                    print("Skipping cal loop")
                     continue
 
 	        #Parse ICAL data
@@ -55,10 +54,11 @@ class CalendarThread(threading.Thread):
 
                 self.lastRunTime = datetime.datetime.now()
 
-        except Exception as e:
-            print sys.exc_info()[0]
-            print e
-            return
+            except Exception as e:
+                print sys.exc_info()[0]
+                print e
+            finally:
+                time.sleep(5)
 
     def die(self):
         print("Calendar stopping...")
