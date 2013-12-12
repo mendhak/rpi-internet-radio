@@ -7,21 +7,61 @@ import struct
 import evdev
 import select
 
+import datetime
+import pytz
+import urllib2
+import icalendar
+from icalendar import Calendar, Event
+import ConfigParser
 
-class Calendar(threading.Thread):
-    def __init__(self):
+#Read ICS URL from config fie
+Config = ConfigParser.ConfigParser()
+Config.read("alarm.cfg")
+gcalurl = Config.get("default", "GoogleCalendarICSUrl")
+gcalkeyword = Config.get("default", "GoogleCalendarEventKeyword")
+nextAlarmStart = None
+nextAlarmEnd = None
+
+
+class CalendarThread(threading.Thread):
+
+    def __init__(self, callback):
+        self.callback = callback
+        self.lastRunTime = None
         self.keepRunning = True
-        super(Calendar, self).__init__()
+        super(CalendarThread, self).__init__()
 
     def run(self):
         try:
             while self.keepRunning:
-                print("First thread")
-                time.sleep(3)
-        except:
+                if self.lastRunTime and (datetime.datetime.now() - self.lastRunTime).total_seconds() < 300:
+                    print "Skipping loop"
+                    time.sleep(5)
+                    continue
+
+	        #Parse ICAL data
+                response = urllib2.urlopen(gcalurl)
+	        cal = icalendar.Calendar.from_ical(response.read())
+
+                #Find the next event in the next hour
+                for event in cal.walk('vevent'):
+                    if (type(event.get('dtstart').dt) is datetime.datetime
+                     and event.get('dtstart').dt > pytz.UTC.localize(datetime.datetime.now())):
+                        timediff = (event.get('dtstart').dt - pytz.UTC.localize(datetime.datetime.now())).total_seconds()
+                        if timediff < 3600 and gcalkeyword in event.get('summary'):
+                            print event.get('dtstart').dt, "to", event.get('dtend').dt
+                            print event.get('summary')
+                            self.callback(event.get('dtstart').dt, event.get('dtend').dt)
+
+                self.lastRunTime = datetime.datetime.now()
+
+        except Exception as e:
+            print sys.exc_info()[0]
+            print e
             return
 
     def die(self):
+        print("Calendar stopping...")
         self.keepRunning = False
 
 
@@ -44,10 +84,12 @@ class Touchscreen(threading.Thread):
                     print(event)
 
     def die(self):
+        print("Touchscreen stopping...")
         self.keepRunning = False
 
 
 def stop(signum=None, frame=None):
+    print("Stopping all threads")
     ts.die()
     cal.die()
     sys.exit()
@@ -56,18 +98,28 @@ def stop(signum=None, frame=None):
 
 signal.signal(signal.SIGTERM, stop)
 
+def cb_newAlarm(startDate, endDate):
+    global nextAlarmStart
+    global nextAlarmEnd
+    nextAlarmStart = startDate
+    nextAlarmEnd = endDate
+
 
 print("Starting threads")
 ts = Touchscreen()
-cal = Calendar()
+cal = CalendarThread(cb_newAlarm)
 ts.start()
 cal.start()
 
 
 try:
     while True:
-        print("Main thread")
-        time.sleep(20)
+        if nextAlarmStart:
+            if (nextAlarmStart-pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 5:
+                print("ALARM GO!", nextAlarmEnd)
+                nextAlarmStart = None
+                nextAlarmEnd = None
+        time.sleep(1)
 except:
     print("Exiting threads, please wait...")
     stop()
