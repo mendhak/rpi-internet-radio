@@ -22,6 +22,12 @@ gcalkeyword = Config.get("default", "GoogleCalendarEventKeyword")
 nextAlarmStart = None
 nextAlarmEnd = None
 
+if not os.path.exists("/dev/input/event0"):
+    print("WARNING: Touchscreen input at /dev/input/event0 does not exist")
+
+if not os.path.exists("/dev/fb1"):
+    sys.exit("FATAL: Can't find PI32 LCD screen! Exiting...")
+
 
 class CalendarThread(threading.Thread):
 
