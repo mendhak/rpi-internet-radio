@@ -183,9 +183,36 @@ class Touchscreen(threading.Thread):
         print("Touchscreen stopping...")
         self.keepRunning = False
 
+class ButtonThread(threading.Thread):
+    def __init__(self, callback):
+        print("Buttons starting...")
+        super(ButtonThread, self).__init__()
+        self.keepRunning = True
+        self.callback = callback
+   
+    def run(self):
+        x = 1
+        file = open("/dev/fb1")
+        buf = array.array('h', [0])
+
+        while self.keepRunning:
+            try:
+                x = fcntl.ioctl(file, -444763391, buf, 1)
+                #print x
+                if buf[0] != 31:
+                    self.callback(buf[0])
+                time.sleep(.3)
+            except KeyboardInterrupt:
+                return
+
+    def die(self):
+        print("Buttons stopping...")
+        self.keepRunning = False
+
 
 def stop(signum=None, frame=None):
     print("Stopping all threads")
+    bs.die()
     ds.die()
     ts.die()
     cal.die()
@@ -208,16 +235,46 @@ def cb_newAlarm(startDate, endDate, message=None):
     nextAlarmEnd = endDate
     nextAlarmMessage = message
 
+def cb_buttonPress(num):
+    if num == 23:
+        print("Button: Next station")
+        nextMusic()
+
+    if num == 27:
+        mpcvolume = commands.getstatusoutput("mpc volume")
+        volume = int(mpcvolume[1].replace("volume:","").replace(" ","").replace("%",""))
+        volume += 1
+        print("Button: Volume up ({0})".format(volume))
+        commands.getstatusoutput("mpc volume " + str(volume))
+
+       
+    if num == 29:
+        mpcvolume = commands.getstatusoutput("mpc volume")
+        volume = int(mpcvolume[1].replace("volume:","").replace(" ","").replace("%",""))
+        volume -= 1
+        print("Button: Volume down ({0})".format(volume))
+        commands.getstatusoutput("mpc volume " + str(volume))
+    
+    if num == 15:
+        print("Button: Start/Stop")
+        toggleMusic()
+    
+    if num == 30:
+        print("Button 30 does nothing")
+
 
 def toggleMusic():
-    commands.getstatusoutput("mpc toggle")    
+    print(commands.getstatusoutput("mpc toggle"))
 
 def playMusic():
-    commands.getstatusoutput("mpc next")
-    commands.getstatusoutput("mpc play")
+    print( commands.getstatusoutput("mpc next"))
+    print(commands.getstatusoutput("mpc play"))
 
 def stopMusic():
-    commands.getstatusoutput("mpc stop")
+    print(commands.getstatusoutput("mpc stop"))
+
+def nextMusic():
+    print(commands.getstatusoutput("mpc next"))
 
 def startAlarm(start, end, message):
     print("START ALARM", message)
@@ -235,11 +292,13 @@ def stopAlarm():
     ds.alarming(False)
 
 print("Starting threads")
-commands.getstatusoutput("mpc clear")
-commands.getstatusoutput("mpc lsplaylists | mpc load")
+print(commands.getstatusoutput("mpc clear"))
+print(commands.getstatusoutput("mpc lsplaylists | sort --random-sort | mpc load"))
+bs = ButtonThread(cb_buttonPress)
 ds = DisplayThread()
 ts = Touchscreen(cb_touch)
 cal = CalendarThread(cb_newAlarm)
+bs.start()
 ds.start()
 ts.start()
 cal.start()
