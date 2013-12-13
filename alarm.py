@@ -131,22 +131,37 @@ class CalendarThread(threading.Thread):
 
 
 class Touchscreen(threading.Thread):
-    def __init__(self):          
+    def __init__(self, callback):          
         print("Touchscreen starting...")
         #long int, long int, unsigned short, unsigned short, unsigned int
         self.FORMAT = 'llHHI'
         self.EVENT_SIZE = struct.calcsize(self.FORMAT)
         #open file in binary mode
         self.keepRunning = True
+        self.callback = callback
         super(Touchscreen, self).__init__()
 
     def run(self):
         dev = evdev.InputDevice("/dev/input/event0")
         while self.keepRunning:
-            r,w,x = select.select([dev.fd], [], [], 0.1)
+            r,s,t = select.select([dev.fd], [], [], 0.1)
+            #print r,w,x
             if r:
                 for event in dev.read():
-                    print(event)
+                    if event.type == 3:
+                        if event.code == 0:
+                            x = event.value
+                        if event.code == 1:
+                            y = event.value
+                        if event.code == 24:
+                            p = event.value
+    
+                if x and y and p:
+                    self.callback(x,y,p)
+                    x = None
+                    y = None
+                    p = None
+                time.sleep(1)
 
     def die(self):
         print("Touchscreen stopping...")
@@ -165,6 +180,9 @@ def stop(signum=None, frame=None):
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
 
+def cb_touch(x, y, pressure):
+    print("User touched X:{0}, Y:{1}, Pressure:{2}".format(x,y,pressure))
+
 def cb_newAlarm(startDate, endDate):
     global nextAlarmStart
     global nextAlarmEnd
@@ -174,7 +192,7 @@ def cb_newAlarm(startDate, endDate):
 
 print("Starting threads")
 ds = DisplayThread()
-ts = Touchscreen()
+ts = Touchscreen(cb_touch)
 cal = CalendarThread(cb_newAlarm)
 ds.start()
 ts.start()
