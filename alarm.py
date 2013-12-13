@@ -1,8 +1,21 @@
 import os
 import sys
 
+# Inital checks
 if os.getuid() != 0:
     sys.exit("You must run this as sudo python alarm.py")
+
+if not os.path.exists("/dev/input/event0"):
+    print("WARNING: Touchscreen input at /dev/input/event0 does not exist")
+
+if not os.path.exists("/dev/fb1"):
+    sys.exit("FATAL: Can't find PI32 LCD screen! Exiting...")
+
+# Set the framebuffer device; /dev/fb1 is the PI32 touchscreen
+os.environ['SDL_VIDEODRIVER']="fbcon"
+os.environ["FRAMEBUFFER"]="/dev/fb1"
+os.environ["SDL_FBDEV"] = "/dev/fb1"
+
 
 import time
 import threading
@@ -24,7 +37,7 @@ import ConfigParser
 
 
 
-#Read ICS URL from config fie
+# Initialize values and read config
 Config = ConfigParser.ConfigParser()
 Config.read("alarm.cfg")
 gcalurl = Config.get("default", "GoogleCalendarICSUrl")
@@ -32,16 +45,6 @@ gcalkeyword = Config.get("default", "GoogleCalendarEventKeyword")
 nextAlarmStart = None
 nextAlarmEnd = None
 
-if not os.path.exists("/dev/input/event0"):
-    print("WARNING: Touchscreen input at /dev/input/event0 does not exist")
-
-if not os.path.exists("/dev/fb1"):
-    sys.exit("FATAL: Can't find PI32 LCD screen! Exiting...")
-
-
-os.environ['SDL_VIDEODRIVER']="fbcon"
-os.environ["FRAMEBUFFER"]="/dev/fb1"
-os.environ["SDL_FBDEV"] = "/dev/fb1"
 
 class DisplayThread(threading.Thread):
 
@@ -86,6 +89,7 @@ class DisplayThread(threading.Thread):
 class CalendarThread(threading.Thread):
 
     def __init__(self, callback):
+        print("Calendar starting...")
         self.callback = callback
         self.lastRunTime = None
         self.keepRunning = True
@@ -128,6 +132,7 @@ class CalendarThread(threading.Thread):
 
 class Touchscreen(threading.Thread):
     def __init__(self):          
+        print("Touchscreen starting...")
         #long int, long int, unsigned short, unsigned short, unsigned int
         self.FORMAT = 'llHHI'
         self.EVENT_SIZE = struct.calcsize(self.FORMAT)
@@ -185,7 +190,6 @@ try:
                 nextAlarmEnd = None
         time.sleep(1)
 except:
-    print("Exiting threads, please wait...")
     stop()
 
 
