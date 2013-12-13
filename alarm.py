@@ -49,7 +49,7 @@ gcalurl = Config.get("default", "GoogleCalendarICSUrl")
 gcalkeyword = Config.get("default", "GoogleCalendarEventKeyword")
 nextAlarmStart = None
 nextAlarmEnd = None
-
+nextAlarmMessage = None
 
 class DisplayThread(threading.Thread):
 
@@ -57,6 +57,7 @@ class DisplayThread(threading.Thread):
         print("Display starting...")
         super(DisplayThread, self).__init__()
         self.keepRunning = True
+        self.currentlyAlarming = False
 
     def run(self):
         pygame.init()
@@ -70,20 +71,31 @@ class DisplayThread(threading.Thread):
         Background = ThisSurface.copy()
 
         while self.keepRunning:
-            TextReady = LargeFont.render(time.strftime("%S"), True, (0x00, 0xFF, 0x00))
-            textrect = TextReady.get_rect()
+            TextTime = LargeFont.render(time.strftime("%H:%M"), True, (0x00, 0xFF, 0x00))
+            textrect = TextTime.get_rect()
             textrect.centerx = ThisSurface.get_rect().centerx
             textrect.centery = ThisSurface.get_rect().centery
+            TextSec = SmallFont.render(time.strftime("%S"), True, (0xFF, 0xFF, 0xFF))
+            textrect2 = TextSec.get_rect()
+            textrect2.topright = textrect.topright
 
             # Set background color
-            ThisSurface.fill((0x00, 0x00, 0x00))
+            if self.currentlyAlarming:
+                ThisSurface.fill((0xFF, 0x00, 0x00))
+            else:
+                ThisSurface.fill((0x00,0x00,0x00))
 
             # Write some text
-            ThisSurface.blit(TextReady, textrect)
+            ThisSurface.blit(TextTime, textrect)
+            ThisSurface.blit(TextSec, textrect2)
 
             # Render
             pygame.display.flip()
             time.sleep(1)
+
+
+    def alarming(self, status, message=None):
+        self.currentlyAlarming = status
 
     def die(self):
         print("Display stopping...")
@@ -186,13 +198,15 @@ signal.signal(signal.SIGINT, stop)
 
 def cb_touch(x, y, pressure):
     print("User touched X:{0}, Y:{1}, Pressure:{2}".format(x,y,pressure))
+    ds.alarming(False)
     toggleMusic()
 
-def cb_newAlarm(startDate, endDate):
+def cb_newAlarm(startDate, endDate, message=None):
     global nextAlarmStart
     global nextAlarmEnd
     nextAlarmStart = startDate
     nextAlarmEnd = endDate
+    nextAlarmMessage = message
 
 
 def toggleMusic():
@@ -201,6 +215,22 @@ def toggleMusic():
 def playMusic():
     commands.getstatusoutput("mpc next")
     commands.getstatusoutput("mpc play")
+
+def stopMusic():
+    commands.getstatusoutput("mpc stop")
+
+def startAlarm(start, end, message):
+    #Set background red
+    #Play music
+    #Other effects
+    playMusic()
+    ds.alarming(True, message)
+
+
+def stopAlarm():
+    #Background black?
+    stopMusic()
+    ds.alarming(False)
 
 print("Starting threads")
 commands.getstatusoutput("mpc clear")
@@ -218,7 +248,12 @@ try:
         if nextAlarmStart:
             if (nextAlarmStart-pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 5:
                 print("ALARM GO!", nextAlarmEnd)
+                startAlarm(nextAlarmStart, nextAlarmEnd, nextAlarmMessage)
                 nextAlarmStart = None
+
+        if nextAlarmEnd:
+            if (nextAlarmEnd - pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 5:
+                stopAlarm()
                 nextAlarmEnd = None
         time.sleep(1)
 except:
