@@ -128,8 +128,8 @@ class CalendarThread(threading.Thread):
                      and event.get('dtstart').dt > pytz.UTC.localize(datetime.datetime.now())):
                         timediff = (event.get('dtstart').dt - pytz.UTC.localize(datetime.datetime.now())).total_seconds()
                         if timediff < 3600 and gcalkeyword in event.get('summary'):
-                            print event.get('dtstart').dt, "to", event.get('dtend').dt
-                            print event.get('summary')
+                            print("Next alarm: {0} from {1} to {2}".format(event.get('summary'), 
+                                                       event.get('dtstart').dt, event.get('dtend').dt))
                             self.callback(event.get('dtstart').dt, event.get('dtend').dt)
 
                 self.lastRunTime = datetime.datetime.now()
@@ -220,6 +220,7 @@ def stopMusic():
     commands.getstatusoutput("mpc stop")
 
 def startAlarm(start, end, message):
+    print("START ALARM", message)
     #Set background red
     #Play music
     #Other effects
@@ -228,6 +229,7 @@ def startAlarm(start, end, message):
 
 
 def stopAlarm():
+    print("STOP ALARM")
     #Background black?
     stopMusic()
     ds.alarming(False)
@@ -246,13 +248,12 @@ cal.start()
 try:
     while True:
         if nextAlarmStart:
-            if (nextAlarmStart-pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 5:
-                print("ALARM GO!", nextAlarmEnd)
+            if (nextAlarmStart-pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 2:
                 startAlarm(nextAlarmStart, nextAlarmEnd, nextAlarmMessage)
                 nextAlarmStart = None
 
         if nextAlarmEnd:
-            if (nextAlarmEnd - pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 5:
+            if (nextAlarmEnd - pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 2:
                 stopAlarm()
                 nextAlarmEnd = None
         time.sleep(1)
