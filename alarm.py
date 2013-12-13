@@ -8,8 +8,12 @@ if os.getuid() != 0:
 if not os.path.exists("/dev/input/event0"):
     print("WARNING: Touchscreen input at /dev/input/event0 does not exist")
 
+if not os.path.exists("/usr/bin/mpc") or not os.path.exists("/usr/bin/mpd"):
+    print("FATAL: Please ensure that mpc and mpd are installed.")
+
 if not os.path.exists("/dev/fb1"):
     sys.exit("FATAL: Can't find PI32 LCD screen! Exiting...")
+
 
 # Set the framebuffer device; /dev/fb1 is the PI32 touchscreen
 os.environ['SDL_VIDEODRIVER']="fbcon"
@@ -34,6 +38,7 @@ import urllib2
 import icalendar
 from icalendar import Calendar, Event
 import ConfigParser
+import commands
 
 
 
@@ -99,7 +104,6 @@ class CalendarThread(threading.Thread):
         while self.keepRunning:
             try:
                 if self.lastRunTime and (datetime.datetime.now() - self.lastRunTime).total_seconds() < 300:
-                    print("Skipping cal loop")
                     continue
 
 	        #Parse ICAL data
@@ -182,6 +186,7 @@ signal.signal(signal.SIGINT, stop)
 
 def cb_touch(x, y, pressure):
     print("User touched X:{0}, Y:{1}, Pressure:{2}".format(x,y,pressure))
+    toggleMusic()
 
 def cb_newAlarm(startDate, endDate):
     global nextAlarmStart
@@ -190,7 +195,16 @@ def cb_newAlarm(startDate, endDate):
     nextAlarmEnd = endDate
 
 
+def toggleMusic():
+    commands.getstatusoutput("mpc toggle")    
+
+def playMusic():
+    commands.getstatusoutput("mpc next")
+    commands.getstatusoutput("mpc play")
+
 print("Starting threads")
+commands.getstatusoutput("mpc clear")
+commands.getstatusoutput("mpc lsplaylists | mpc load")
 ds = DisplayThread()
 ts = Touchscreen(cb_touch)
 cal = CalendarThread(cb_newAlarm)
