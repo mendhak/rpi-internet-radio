@@ -47,6 +47,7 @@ Config = ConfigParser.ConfigParser()
 Config.read("alarm.cfg")
 gcalurl = Config.get("default", "GoogleCalendarICSUrl")
 gcalkeyword = Config.get("default", "GoogleCalendarEventKeyword")
+lastMpcCheck = datetime.datetime.now()
 nextAlarmStart = None
 nextAlarmEnd = None
 nextAlarmMessage = None
@@ -78,6 +79,13 @@ class DisplayThread(threading.Thread):
             TextSec = SmallFont.render(time.strftime("%S"), True, (0xFF, 0xFF, 0xFF))
             textrect2 = TextSec.get_rect()
             textrect2.topright = textrect.topright
+            TextMsg = None
+
+            if self.alarmMessage:
+                TextMsg = SmallFont.render(self.alarmMessage, True, (0xFF, 0xFF, 0xFF))
+                textmsgrect = TextMsg.get_rect()
+                textmsgrect.centerx = ThisSurface.get_rect().centerx
+                textmsgrect.top = textrect.bottom
 
             # Set background color
             if self.currentlyAlarming:
@@ -89,6 +97,9 @@ class DisplayThread(threading.Thread):
             ThisSurface.blit(TextTime, textrect)
             ThisSurface.blit(TextSec, textrect2)
 
+            if TextMsg:
+                ThisSurface.blit(TextMsg, textmsgrect)
+
             # Render
             pygame.display.flip()
             time.sleep(1)
@@ -96,6 +107,11 @@ class DisplayThread(threading.Thread):
 
     def alarming(self, status, message=None):
         self.currentlyAlarming = status
+        self.alarmMessage = message
+
+    def message(self, message):
+        if not self.currentlyAlarming:
+            self.alarmMessage = message
 
     def die(self):
         print("Display stopping...")
@@ -231,6 +247,7 @@ def cb_touch(x, y, pressure):
 def cb_newAlarm(startDate, endDate, message=None):
     global nextAlarmStart
     global nextAlarmEnd
+    global nextAlarmMessage
     nextAlarmStart = startDate
     nextAlarmEnd = endDate
     nextAlarmMessage = message
@@ -265,16 +282,20 @@ def cb_buttonPress(num):
 
 def toggleMusic():
     print(commands.getstatusoutput("mpc toggle"))
+    showCurrentTrack()
 
 def playMusic():
     print( commands.getstatusoutput("mpc next"))
     print(commands.getstatusoutput("mpc play"))
+    showCurrentTrack()
 
 def stopMusic():
     print(commands.getstatusoutput("mpc stop"))
+    showCurrentTrack()
 
 def nextMusic():
     print(commands.getstatusoutput("mpc next"))
+    showCurrentTrack()
 
 def startAlarm(start, end, message):
     print("START ALARM", message)
@@ -284,12 +305,17 @@ def startAlarm(start, end, message):
     playMusic()
     ds.alarming(True, message)
 
-
 def stopAlarm():
     print("STOP ALARM")
     #Background black?
     stopMusic()
     ds.alarming(False)
+
+def showCurrentTrack():
+    if '[playing]' in commands.getstatusoutput("mpc")[1]:
+        track = commands.getstatusoutput("mpc current")[1]
+        track = track[:25] + (track[25:] and '...')
+        ds.message(track)
 
 print("Starting threads")
 print(commands.getstatusoutput("mpc clear"))
@@ -302,10 +328,13 @@ bs.start()
 ds.start()
 ts.start()
 cal.start()
-
+ds.alarming(False)
 
 try:
     while True:
+        if (datetime.datetime.now() - lastMpcCheck).total_seconds() > 10:
+            showCurrentTrack()
+            lastMpcCheck = datetime.datetime.now()
         if nextAlarmStart:
             if (nextAlarmStart-pytz.UTC.localize(datetime.datetime.now())).total_seconds() < 2:
                 startAlarm(nextAlarmStart, nextAlarmEnd, nextAlarmMessage)
