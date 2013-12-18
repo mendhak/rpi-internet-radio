@@ -316,6 +316,8 @@ def showCurrentTrack():
         track = commands.getstatusoutput("mpc current")[1]
         track = track[:25] + (track[25:] and '...')
         ds.message(track)
+    else:
+        ds.message('')
 
 print("Starting threads")
 print(commands.getstatusoutput("mpc clear"))
